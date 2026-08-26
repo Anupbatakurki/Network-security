@@ -44,6 +44,7 @@ class DataValidation:
             for column in base_df.columns:
                 d1=base_df[column]
                 d2=current_df[column]
+                #to compare two samples
                 is_same_dist=ks_2samp(d1,d2)
                 if threshold<=is_same_dist.pvalue:
                     is_found=False

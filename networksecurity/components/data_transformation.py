@@ -10,8 +10,14 @@ from sklearn.compose import ColumnTransformer
 from networksecurity.constant.training_pipeline import TARGET_COLUMN
 from networksecurity.constant.training_pipeline import DATA_TRANSFORMATION_IMPUTER_PARAMS
 from networksecurity.entity.config_entity import DataTransformationConfig
-from networksecurity.exception.excpetion import NetworkSecurityException
+from networksecurity.exception.exception import NetworkSecurityException
 from networksecurity.logging.logger import logging 
+from networksecurity.utils.main_utils.utils import save_numpy_array_data, save_object
+from networksecurity.entity.artifact_entity import (
+    DataTransformationArtifact,
+    DataValidationArtifact
+)
+
 
 class DataTransformation:
     def __init__(self,data_validation_artifact:DataValidationArtifact,data_transformation_config:DataTransformationConfig):
@@ -32,7 +38,7 @@ class DataTransformation:
 #get data transformation object
 
     def get_data_transformer_object(cls)->Pipeline:
-                """
+            """
             It initialises a KNNImputer object with the parameters specified in the training_pipeline.py file
             and returns a Pipeline object with the KNNImputer object as the first step.
 
@@ -42,16 +48,14 @@ class DataTransformation:
             Returns:
             A Pipeline object
             """
-            logging.info(
-                "Entered get_data_trnasformer_object method of Trnasformation class"
-            )
+            logging.info("Entered get_data_trnasformer_object method of Transformation class")
             try:
-            imputer:KNNImputer=KNNImputer(**DATA_TRANSFORMATION_IMPUTER_PARAMS)
-            logging.info(
-                    f"Initialise KNNImputer with {DATA_TRANSFORMATION_IMPUTER_PARAMS}"
-                )
-            processor:Pipeline=Pipeline([("imputer",imputer)])
-            return processor
+                imputer:KNNImputer=KNNImputer(**DATA_TRANSFORMATION_IMPUTER_PARAMS)
+                logging.info(
+                        f"Initialise KNNImputer with {DATA_TRANSFORMATION_IMPUTER_PARAMS}"
+                    )
+                processor:Pipeline=Pipeline([("imputer",imputer)])
+                return processor
             except Exception as e:
                 raise NetworkSecurityException(e,sys)
 
@@ -100,3 +104,5 @@ class DataTransformation:
                 transformed_test_file_path=self.data_transformation_config.transformed_test_file_path
             )
             return data_transformation_artifact
+        except Exception as e:
+            raise NetworkSecurityException(e,sys)

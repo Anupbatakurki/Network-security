@@ -1,0 +1,6 @@
+[2026-08-26 23:29:51,860 ] 1025 httpx - INFO - HTTP Request: GET https://dagshub.com/api/v1/user "HTTP/1.1 200 OK"
+[2026-08-26 23:29:51,866 ] 107 dagshub - INFO - Accessing as Anupbatakurki
+[2026-08-26 23:29:52,978 ] 1025 httpx - INFO - HTTP Request: GET https://dagshub.com/api/v1/repos/Anupbatakurki/Network-security "HTTP/1.1 200 OK"
+[2026-08-26 23:29:53,985 ] 1025 httpx - INFO - HTTP Request: GET https://dagshub.com/api/v1/user "HTTP/1.1 200 OK"
+[2026-08-26 23:29:53,986 ] 107 dagshub - INFO - Initialized MLflow to track repo "Anupbatakurki/Network-security"
+[2026-08-26 23:29:53,987 ] 107 dagshub - INFO - Repository Anupbatakurki/Network-security initialized!
