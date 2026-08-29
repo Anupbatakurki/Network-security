@@ -29,7 +29,7 @@ class DataTransformation:
 
 #Reading the data from the file path (csv)
     @staticmethod
-    def read_data(file_path) -> pd.Dataframe:
+    def read_data(file_path) -> pd.DataFrame:
         try:
             return pd.read_csv(file_path)
         except:

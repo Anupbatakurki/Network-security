@@ -15,5 +15,6 @@ fastapi
 uvicorn
 python-multipart
 dill
-
+boto3
+shap
 # -e .
