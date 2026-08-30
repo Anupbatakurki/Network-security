@@ -126,33 +126,58 @@ jobs:
           AWS_ACCOUNT_ID: "724772093227"
 
         run: |
-          $ECR_REGISTRY = "$env:AWS_ACCOUNT_ID.dkr.ecr.$env:AWS_REGION.amazonaws.com"
-          $IMAGE = "${ECR_REGISTRY}/${env:ECR_REPOSITORY}:latest"
-
-          Write-Host "Pulling latest Docker image..."
-          Write-Host "Repository: $env:ECR_REPOSITORY"
-          Write-Host "Image: $IMAGE"
+          if ([string]::IsNullOrWhiteSpace($env:AWS_REGION)) {
+              throw "AWS_REGION secret is empty"
+          }
 
           if ([string]::IsNullOrWhiteSpace($env:ECR_REPOSITORY)) {
               throw "ECR_REPOSITORY_NAME secret is empty"
           }
 
+          $ECR_REGISTRY = "$env:AWS_ACCOUNT_ID.dkr.ecr.$env:AWS_REGION.amazonaws.com"
+          $IMAGE = "${ECR_REGISTRY}/${env:ECR_REPOSITORY}:latest"
+
+          Write-Host "Pulling latest Docker image..."
+          Write-Host "Image: $IMAGE"
+
           docker pull $IMAGE
+
+          if ($LASTEXITCODE -ne 0) {
+              throw "Docker pull failed"
+          }
+
 
       - name: Stop Existing Container
         shell: powershell
         run: |
-          docker stop networksecurity
+          $container = docker ps -aq -f "name=networksecurity"
 
-          if ($LASTEXITCODE -ne 0) {
-              Write-Host "No existing container to stop"
+          if ($container) {
+
+              Write-Host "Existing container found: $container"
+
+              docker stop networksecurity
+
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Host "Container was already stopped"
+              }
+
+              docker rm networksecurity
+
+              if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to remove existing container"
+              }
+
+              Write-Host "Existing container removed successfully"
+
+          }
+          else {
+
+              Write-Host "No existing container found."
+              Write-Host "Continuing deployment..."
+
           }
 
-          docker rm networksecurity
-
-          if ($LASTEXITCODE -ne 0) {
-              Write-Host "No existing container to remove"
-          }
 
       - name: Run Docker Container
         shell: powershell
@@ -165,6 +190,11 @@ jobs:
           MONGODB_URL_KEY: ${{ secrets.MONGODB_URL_KEY }}
 
         run: |
+
+          if ([string]::IsNullOrWhiteSpace($env:ECR_REPOSITORY)) {
+              throw "ECR_REPOSITORY_NAME secret is empty"
+          }
+
           $ECR_REGISTRY = "$env:AWS_ACCOUNT_ID.dkr.ecr.$env:AWS_REGION.amazonaws.com"
           $IMAGE = "${ECR_REGISTRY}/${env:ECR_REPOSITORY}:latest"
 
@@ -180,16 +210,33 @@ jobs:
             -e MONGODB_URL_KEY="$env:MONGODB_URL_KEY" `
             $IMAGE
 
+          if ($LASTEXITCODE -ne 0) {
+              throw "Docker container failed to start"
+          }
+
+          Write-Host "Docker container started successfully."
+
+
       - name: Check Container
         shell: powershell
         run: |
-          Write-Host "Checking running containers..."
+
+          Write-Host "Running containers:"
           docker ps
 
-          Write-Host "Container logs..."
+          Write-Host "Container status:"
+          docker inspect -f "{{.State.Status}}" networksecurity
+
+          Write-Host "Container logs:"
           docker logs --tail 50 networksecurity
+
 
       - name: Clean Docker Images
         shell: powershell
         run: |
+
+          Write-Host "Cleaning unused Docker images..."
+
           docker image prune -af
+
+          Write-Host "Docker cleanup completed."
