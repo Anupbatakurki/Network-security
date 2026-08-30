@@ -1,0 +1,15 @@
+name: Self Hosted Runner Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-runner:
+    runs-on: self-hosted
+
+    steps:
+      - name: Test Runner
+        run: |
+          echo "Self-hosted runner is working"
+          docker --version
+          aws --version
