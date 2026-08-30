@@ -1,2 +1,7 @@
-venv
 .env
+venv
+__pycache__/
+*.pyc
+Artifacts/
+prediction_output/
+logs/
