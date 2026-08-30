@@ -54,11 +54,15 @@ async def index():
 @app.get("/train")
 async def train_route():
     try:
-        train_pipeline=TrainingPipeline()
+        from networksecurity.pipeline.training_pipeline import TrainingPipeline
+
+        train_pipeline = TrainingPipeline()
         train_pipeline.run_pipeline()
+
         return Response("Training is successful")
+
     except Exception as e:
-        raise NetworkSecurityException(e,sys)
+        raise NetworkSecurityException(e, sys)
     
 @app.post("/predict")
 async def predict_route(request: Request,file: UploadFile = File(...)):
