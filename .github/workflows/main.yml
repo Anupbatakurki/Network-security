@@ -6,6 +6,7 @@ on:
       - main
     paths-ignore:
       - 'README.md'
+
   pull_request:
     branches:
       - main
@@ -14,11 +15,13 @@ permissions:
   contents: read
 
 jobs:
+
   integration:
     name: Continuous Integration
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -32,14 +35,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Unit Tests
+      - name: Run Tests
         run: |
-          echo "Running unit tests"
+          echo "Running tests..."
           python -c "import fastapi; import pandas; import sklearn; print('Dependencies OK')"
 
       - name: Build Docker Image
         run: |
           docker build -t networksecurity:${{ github.sha }} .
+
 
   build-and-push-ecr-image:
     name: Continuous Delivery
@@ -47,6 +51,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -61,16 +66,40 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and Push Docker Image
+      - name: Build Docker Image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
           IMAGE_TAG: ${{ github.sha }}
+
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+
+      - name: Tag Docker Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+
+        run: |
+          docker tag \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Push Docker Image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
+
+        run: |
+          docker push \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+          docker push \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
 
   continuous-deployment:
     name: Continuous Deployment
@@ -78,6 +107,7 @@ jobs:
     runs-on: self-hosted
 
     steps:
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -93,8 +123,10 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+
         run: |
-          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "Pulling latest Docker image..."
+          docker pull "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
 
       - name: Stop Existing Container
         run: |
@@ -105,6 +137,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+
         run: |
           docker run -d \
             -p 8000:8000 \
@@ -113,13 +146,13 @@ jobs:
             -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
             -e AWS_REGION="${{ secrets.AWS_REGION }}" \
             -e MONGODB_URL_KEY="${{ secrets.MONGODB_URL_KEY }}" \
-            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+            "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
 
-      - name: Check Running Container
+      - name: Check Container
         run: |
           docker ps
           docker logs --tail 50 networksecurity
 
-      - name: Clean Old Docker Images
+      - name: Clean Docker Images
         run: |
           docker image prune -af
