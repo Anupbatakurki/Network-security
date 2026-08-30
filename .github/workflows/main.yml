@@ -119,7 +119,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-        - name: Pull Latest Docker Image
+      - name: Pull Latest Docker Image
         shell: powershell
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
