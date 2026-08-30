@@ -119,14 +119,24 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Pull Latest Docker Image
+        - name: Pull Latest Docker Image
+        shell: powershell
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
           ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
-
+          AWS_ACCOUNT_ID: "724772093227"
         run: |
-          echo "Pulling latest Docker image..."
-          docker pull "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+          Write-Host "AWS_REGION is set: $(-not [string]::IsNullOrWhiteSpace($env:AWS_REGION))"
+          Write-Host "ECR_REPOSITORY is set: $(-not [string]::IsNullOrWhiteSpace($env:ECR_REPOSITORY))"
+      
+          $ECR_REGISTRY = "$env:AWS_ACCOUNT_ID.dkr.ecr.$env:AWS_REGION.amazonaws.com"
+          $IMAGE = "${ECR_REGISTRY}/${env:ECR_REPOSITORY}:latest"
+      
+          Write-Host "ECR Registry: $ECR_REGISTRY"
+          Write-Host "Repository: $env:ECR_REPOSITORY"
+          Write-Host "Image reference: $IMAGE"
+      
+          docker pull $IMAGE
 
       - name: Stop Existing Container
         run: |
